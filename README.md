@@ -61,7 +61,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File D:\code\news\build_apk.ps1 -
 powershell -NoProfile -ExecutionPolicy Bypass -File D:\code\news\serve_apk.ps1
 ```
 
-脚本会打印形如 `http://192.168.x.x:8000/` 的地址，用手机浏览器打开就能下载安装。停止服务：
+脚本会打印形如 `http://192.168.x.x:8000/` 的地址，用手机浏览器打开就能下载安装。默认提供最近一次构建的包（release 优先，其次 debug）。停止服务：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File D:\code\news\stop_apk_server.ps1

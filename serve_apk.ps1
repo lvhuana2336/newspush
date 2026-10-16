@@ -8,7 +8,14 @@ $ErrorActionPreference = "Continue"
 $ProjectDir = $PSScriptRoot
 
 if ([string]::IsNullOrWhiteSpace($ApkPath)) {
-    $ApkPath = Join-Path $ProjectDir "app\build\outputs\apk\debug\app-debug.apk"
+    $candidates = @(
+        (Join-Path $ProjectDir "app\build\outputs\apk\release\app-release.apk"),
+        (Join-Path $ProjectDir "app\build\outputs\apk\debug\app-debug.apk")
+    ) | Where-Object { Test-Path -LiteralPath $_ } |
+        ForEach-Object { Get-Item -LiteralPath $_ } |
+        Sort-Object LastWriteTime -Descending
+    if ($candidates.Count -eq 0) { throw "no apk found - build first with build_apk.ps1" }
+    $ApkPath = $candidates[0].FullName
 }
 
 if (-not $NoBuild) {
@@ -21,7 +28,11 @@ if (-not (Test-Path -LiteralPath $ApkPath)) {
 
 $apk = Get-Item -LiteralPath $ApkPath
 $sizeMb = [math]::Round($apk.Length / 1MB, 1)
-$downloadName = "newspush-debug.apk"
+if ($apk.Name -like "*release*") {
+    $downloadName = "newspush-release.apk"
+} else {
+    $downloadName = "newspush-debug.apk"
+}
 
 # Page text lives in an UTF-8 html file so this script stays ASCII-only:
 # Windows PowerShell 5.1 parses .ps1 as GBK by default and would break on non-ASCII literals.
@@ -43,6 +54,8 @@ $listener.Start()
 
 Write-Host ""
 Write-Host "APK server started on port $Port."
+Write-Host ("serving: " + $apk.FullName + "  (" + $sizeMb + " MB)")
+Write-Host "NOTE: debug and release builds are signed with different keys, they cannot be installed over each other."
 Write-Host "Connect the phone to the same Wi-Fi, then open one of these URLs in the phone browser:"
 foreach ($a in $addresses) {
     if ($a.Virtual) {
