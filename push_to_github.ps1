@@ -2,11 +2,28 @@ param(
     [Parameter(Mandatory = $true)][string]$RepoUrl,
     [string]$UserName = "lvhuana2336",
     [string]$TokenFile = "D:\AndroidDev\github-token.txt",
-    [string]$Branch = "main"
+    [string]$Branch = "main",
+    [string]$Proxy = ""
 )
 
 $ErrorActionPreference = "Continue"
 $env:GIT_TERMINAL_PROMPT = "0"
+
+# 沙箱里预设的代理指向一个死端口，这里先清掉，再按需套用真实代理
+$env:HTTP_PROXY = ""
+$env:HTTPS_PROXY = ""
+$env:ALL_PROXY = ""
+$env:NO_PROXY = ""
+
+$gitProxyArgs = @()
+if (-not [string]::IsNullOrWhiteSpace($Proxy)) {
+    $env:HTTP_PROXY = $Proxy
+    $env:HTTPS_PROXY = $Proxy
+    $gitProxyArgs = @("-c", "http.proxy=$Proxy")
+    Write-Host "using proxy: $Proxy"
+} else {
+    Write-Host "no proxy (direct connection)"
+}
 
 if (-not (Test-Path -LiteralPath $TokenFile)) {
     throw "token file not found: $TokenFile (put a single-line personal access token there)"
@@ -35,7 +52,7 @@ if ($remotes -contains "origin") {
 Write-Host "remote origin -> $repoFull"
 
 Write-Host "pushing $Branch ..."
-& git -C $PSScriptRoot push $authedUrl $Branch
+& git -C $PSScriptRoot @gitProxyArgs push $authedUrl $Branch
 $code = $LASTEXITCODE
 
 Remove-Item -LiteralPath $askpass -Force -ErrorAction SilentlyContinue
