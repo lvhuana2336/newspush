@@ -1,129 +1,99 @@
 # 新闻推送（NewsPush）
 
-一个面向 Android 的新闻聚合与推送应用：定时抓取网络新闻，先在本地做摘要、分类和重要度评分，再把重要新闻以本地通知的方式推给用户，并附上原文链接。界面保持简洁，支持按分区浏览。
+一个 Android 端的新闻聚合与推送应用：定时从 RSS 源抓取新闻，自动生成摘要并分类，按重要度筛选后以本地通知推送。通知和详情页都保留原文链接，点开即可跳转。
+
+界面保持简洁——首页按分区筛选浏览，详情页看摘要与正文，设置页调整抓取与推送行为。目前没有预编译安装包发布，需要自行构建安装。
+
+> 项目为中文界面与中文分区，默认订阅源也以中文媒体为主。
 
 ## 功能
 
-- 定时抓取：WorkManager 周期任务，默认每 30 分钟一次（可在设置中改为 15 / 30 / 60 / 120 分钟，且只在联网时运行）。
-- 自动摘要：默认调用 DeepSeek API 生成摘要；未配置 Key 或调用失败时，回退到本地抽取式摘要（词频 + 句首权重）。
-- 自动分类：默认由 DeepSeek 从候选分区中选择；同样支持本地关键词分类兜底，覆盖国内、国际、财经、科技、编程、体育、娱乐、健康、军事、科学、社会等分区。
-- 重要度评分：综合“突发 / 重大 / 官方 / 暴跌”等强信号词、订阅源权威权重和标题质量，超过阈值才推通知。
-- 本地推送：通过通知渠道发送摘要式通知，点击回到应用。
-- 原文链接：详情页可直接跳转原文。
-- 可配置：分区开关、通知开关、重要度阈值、自定义 RSS 源均可调整。
-- 单轮处理上限：配置了 DeepSeek 时每轮最多处理 20 条（控制费用与耗时）；只用本地算法时放宽到 200 条。
-- 推送时段：可设定每天只在某个时段内推送（支持跨零点，如 22:00 - 06:00）。时段外抓到的重要新闻不会丢，会保持“未推送”状态，等时段内下一次同步时一起推送。
-- 黑名单：屏蔽词命中标题、摘要或正文即过滤；也可以按来源屏蔽。新增黑名单后会顺带清理库里已经存在的匹配内容（收藏的除外）。
+- **定时抓取**：WorkManager 周期任务，默认 30 分钟一次（可选 15 / 30 / 60 / 120 分钟），仅在联网时运行。
+- **自动摘要与分类**：配置 DeepSeek API Key 后由 DeepSeek 生成摘要并选择分区；未配置或调用失败时自动回退到本地算法（抽取式摘要 + 关键词分类 + 重要度评分），可离线工作。
+- **分区浏览**：国内、国际、财经、科技、编程、体育、娱乐、健康、军事、科学、社会，共 11 个分区，每个都能单独开关。
+- **重要度筛选**：结合强信号词（突发、重大、官方、暴跌 等）、来源权重与标题质量打分，只有超过阈值的新闻才推送，阈值可调。
+- **推送时段**：可限定每天只在某个时段推送，支持跨零点（如 22:00–06:00）。时段外抓到的重要新闻不会丢弃，会保留到时段内的下一次同步补推。
+- **黑名单**：支持屏蔽词（命中标题、摘要或正文即过滤）与来源屏蔽；新增后会顺带清理库中已存在的匹配内容（收藏除外）。
+- **原文链接**：列表与详情页均可跳转原文。
+- **时效过滤**：只保留 14 天内发布的新闻，超窗条目在同步时清理（收藏除外）。
+- **单轮处理上限**：使用 DeepSeek 时每轮最多处理 20 条新条目（控制费用与延迟），纯本地模式放宽到 200 条。
 
 ## 技术栈
 
-- Kotlin + Jetpack Compose（Material 3）
-- Room（本地数据库）
-- DataStore Preferences（设置持久化）
-- WorkManager（定时任务）
-- OkHttp + XML Pull Parser（RSS / Atom 抓取解析）
-- DeepSeek Chat Completions API（摘要与分类，OpenAI 兼容协议）
-
-## 如何构建
-
-本机已经装好一套命令行构建环境，位于 `D:\AndroidDev`：
-
-| 组件 | 路径 | 版本 |
-| --- | --- | --- |
-| JDK | `D:\AndroidDev\jdk` | Temurin 17.0.20.1 |
-| Android SDK | `D:\AndroidDev\android-sdk` | platform-tools、platforms;android-35、build-tools;35.0.0 |
-| Gradle | `D:\AndroidDev\gradle` | 8.9 |
-| Gradle 缓存 | `D:\AndroidDev\gradle-home` | — |
-
-一键编译（会设置好 JAVA_HOME / ANDROID_HOME / GRADLE_USER_HOME）：
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File D:\code\news\build_apk.ps1
-```
-
-连接手机（开启 USB 调试）后直接安装到设备：
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File D:\code\news\build_apk.ps1 -Install
-```
-
-产物位于 `app\build\outputs\apk\debug\app-debug.apk`。
-
-也可以用 Android Studio（Ladybug 或更新版本）打开本目录，它会自动识别 `local.properties` 中的 SDK 路径。
-
-构建仓库已配置国内镜像以加速依赖下载：`settings.gradle.kts` 里优先使用阿里云 Maven 镜像，Gradle wrapper 的分发包指向腾讯云镜像。如需改回官方源，删除这两个文件里的镜像配置即可。
-
-## 把 APK 装到手机
-
-方式一：局域网下载（手机和电脑连同一个 WiFi，不用数据线）
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File D:\code\news\serve_apk.ps1
-```
-
-脚本会打印形如 `http://192.168.x.x:8000/` 的地址，用手机浏览器打开就能下载安装。默认提供最近一次构建的包（release 优先，其次 debug）。停止服务：
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File D:\code\news\stop_apk_server.ps1
-```
-
-如果手机打不开页面，通常是 Windows 防火墙挡了入站连接，用**管理员**身份执行一次即可：
-
-```powershell
-New-NetFirewallRule -DisplayName "NewsPush APK Debug Server 8000" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8000 -Profile Any
-```
-
-方式二：USB 安装（手机需开启 USB 调试）
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File D:\code\news\build_apk.ps1 -Install
-```
-
-方式三：手动拷贝
-
-把 `app\build\outputs\apk\debug\app-debug.apk` 复制到手机的「下载」目录，在手机上点开安装；首次会提示「禁止安装未知应用」，选择允许即可。
-
-注意：当前是 debug 测试包，未做正式签名，适合自己安装验证，不适合上架或对外分发。
-
-## 签名与发布
-
-release 构建使用自签名 keystore，签名配置放在项目根目录的 `keystore.properties`（已 gitignore，不会进版本库），模板见 `keystore.properties.example`。
-
-| 项目 | 值 |
+| 组件 | 用途 |
 | --- | --- |
-| keystore | `D:\AndroidDev\keystore\newspush-release.jks` |
-| 别名 | `newspush` |
-| 密钥算法 | RSA 4096，有效期 10000 天 |
-| 证书 SHA-256 | `1F:33:B3:2C:4C:61:8B:67:15:5E:CE:3F:6F:60:B2:15:CE:51:22:1B:E5:27:E6:1F:91:A6:16:C6:BD:8D:49:82` |
-| 口令记录 | `D:\AndroidDev\keystore\keystore-credentials.txt` |
+| Kotlin + Jetpack Compose（Material 3） | 界面 |
+| Room | 本地数据库 |
+| DataStore Preferences | 设置持久化 |
+| WorkManager | 定时抓取与后台任务 |
+| OkHttp + XmlPullParser | RSS / Atom 抓取与解析 |
+| DeepSeek Chat Completions API | 摘要与分类（可选，OpenAI 兼容协议） |
 
-构建正式包：
+最低支持 Android 8.0（API 26），编译与目标 SDK 为 35。
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File D:\code\news\build_apk.ps1 -Task assembleRelease
+## 快速开始
+
+### 环境要求
+
+- JDK 17
+- Android SDK，含 `platforms;android-35` 与 `build-tools;35.0.0`
+- 可选：Android Studio Ladybug 或更新版本
+
+### 构建
+
+```bash
+git clone https://github.com/lvhuana2336/newspush.git
+cd newspush
+
+# macOS / Linux
+./gradlew assembleDebug
+
+# Windows
+gradlew.bat assembleDebug
 ```
 
-产物：`app\build\outputs\apk\release\app-release.apk`（v2 签名，未开启代码混淆）。
+产物位于 `app/build/outputs/apk/debug/app-debug.apk`。
 
-两个注意点：
+如果命令行找不到 SDK，在项目根目录新建 `local.properties`（已被 gitignore）：
 
-1. **keystore 和口令文件必须备份在一起**。以后所有版本更新都要用同一个签名，丢了就只能卸载重装，用户数据会丢失。
-2. **release 包和 debug 包签名不同，不能互相覆盖安装**。手机上如果已经装了 debug 版，想换 release 版需要先卸载（App 数据、DeepSeek Key、黑名单都会被清掉）。
+```properties
+sdk.dir=/path/to/Android/Sdk
+```
 
-## 目录结构
+也可以直接用 Android Studio 打开项目，同步完成后点运行。
 
-- `data/model`：实体与分区枚举
-- `data/source`：RSS 源定义与抓取解析
-- `data/local`：Room 数据库
-- `data/prefs`：设置持久化
-- `data/repository`：数据仓库与同步逻辑
-- `domain`：摘要、分类、重要度评分
-- `work`：定时任务、调度与通知
-- `ui`：Compose 界面
+### 安装到设备
+
+```bash
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+或者把 APK 拷进手机存储，用文件管理器点开安装（首次需要在系统里允许「安装未知应用」）。
+
+debug 包与 release 包使用不同签名，两者无法互相覆盖安装。
+
+### 依赖下载加速（可选）
+
+仓库默认把依赖源指向国内镜像，在国内网络下更快：`settings.gradle.kts` 中优先使用阿里云 Maven 镜像，Gradle wrapper 的分发包指向腾讯云镜像。在海外网络下可以改回官方源——删除 `settings.gradle.kts` 里 `maven.aliyun.com` 的三行仓库配置，并把 `gradle/wrapper/gradle-wrapper.properties` 的 `distributionUrl` 换成 `https://services.gradle.org/distributions/gradle-8.9-bin.zip`。
+
+## 使用与配置
+
+安装后进入设置页，可调整以下内容：
+
+| 设置项 | 说明 |
+| --- | --- |
+| 推送通知 | 通知总开关 |
+| 推送时段 | 限定每天的推送时间窗，可跨零点 |
+| 抓取间隔 | 15 / 30 / 60 / 120 分钟 |
+| 重要度阈值 | 越高越只推重点新闻 |
+| DeepSeek API Key | 填入后启用云端摘要与分类，留空使用本地算法 |
+| 新闻分区 | 按分区开关抓取与展示 |
+| 黑名单 | 屏蔽词与来源屏蔽 |
+| 自定义 RSS | 添加自己的 RSS / Atom 源，分类由文本自动判断 |
+
+关于 DeepSeek：Key 保存在应用私有目录的 DataStore 中，除 DeepSeek 官方接口外不会发送到别处，也不会写入日志。启用后每轮抓取最多处理 20 条新条目，用于控制费用。
 
 ## 默认订阅源
-
-默认内置的源都在 2026-10 实测过，能拉到当天或前一天的内容：
 
 | 分区 | 来源 |
 | --- | --- |
@@ -132,19 +102,67 @@ powershell -NoProfile -ExecutionPolicy Bypass -File D:\code\news\build_apk.ps1 -
 | 科技 | IT之家、Solidot、少数派 |
 | 编程 | 博客园、开源中国、InfoQ 中文、掘金、美团技术团队、阮一峰的网络日志、Hacker News、DEV Community |
 
-没有采用的原因（都可在设置页自行加回）：人民网 `politics.xml` 的 RSS 停更在 2025-06，新浪科技 RSS 停在 2018，果壳返回 404，36氪 / 虎嗅 / 纽约时报中文 / BBC 中文在本机网络下返回空或连不通。
+RSS 地址由源站自行维护，可能随时改版、限流或停更。一些常见的旧源已失效，因此没有被内置：人民网时政的 RSS 停更在 2025 年 6 月，新浪科技停留在 2018 年，果壳返回 404，36氪 / 虎嗅 / 纽约时报中文 / BBC 中文在部分网络环境下不可用。遇到失效的源，可以在设置页删掉换一个，或直接修改 `app/src/main/java/com/newspush/app/data/source/DefaultFeeds.kt`。
 
-只保留 **14 天内**发布的新闻：同步时会跳过更早的条目，并清理库里早于该窗口的内容（收藏的除外），所以不会再出现陈年旧闻。
+部分源使用 HTTP 明文地址，所以 `AndroidManifest.xml` 开启了 `usesCleartextTraffic`。若只使用 HTTPS 源，可以关闭该开关。
 
-需要复测订阅源可用性时，跑 `scripts/check_feeds.ps1`，它会打印每个源的 HTTP 状态、条目数和最新发布时间。
+## 签名与发布
 
-部分订阅源使用 HTTP 明文地址，因此 `AndroidManifest.xml` 开启了 `usesCleartextTraffic`。若只使用 HTTPS 源，可以关闭该开关。
+仓库不包含任何签名密钥，发布自己的构建需要先生成 keystore：
 
-## 待你确认的重要决策
+```bash
+keytool -genkeypair -v -keystore release.jks -storetype PKCS12 \
+  -alias newspush -keyalg RSA -keysize 4096 -validity 10000
+```
 
-当前版本默认方案如下。你已确认第 2 点接入 DeepSeek（留空 Key 时自动回退本地算法），其余三点如有不同偏好告诉我即可调整：
+然后在项目根目录创建 `keystore.properties`（已被 gitignore，模板见 `keystore.properties.example`）：
 
-1. 新闻来源：默认 RSS（免费、无需密钥、可配置）。是否改用 NewsAPI、定向爬虫或自建后端？
-2. 摘要与分类：已确认接入 DeepSeek API（在设置页填写 API Key 后生效，留空自动回退本地算法）。
-3. 推送方式：默认本地通知（无需服务器，进程被回收后由系统调度）。是否改为 FCM / 自建后端真推送？
-4. 分区与语言：默认中文分区。是否需要调整分区集合、默认抓取间隔或重要度阈值？
+```properties
+storeFile=/absolute/path/to/release.jks
+storePassword=你的口令
+keyAlias=newspush
+keyPassword=你的口令
+```
+
+之后执行 `gradlew.bat assembleRelease`（Windows）或 `./gradlew assembleRelease`，产物在 `app/build/outputs/apk/release/`。
+
+两个容易踩的点：
+
+1. `storeFile` 的路径用正斜杠或双反斜杠。`.properties` 文件里反斜杠是转义符，写成 `D:\keys\app.jks` 时 `\k`、`\a` 会被错误解析，`\n` 甚至会变成换行。
+2. release 构建默认未开启代码混淆（`isMinifyEnabled = false`）。想减小体积可以打开 R8，但要自行验证 Room 与 Compose 的 keep 规则。
+
+keystore 和口令请单独备份：后续所有版本更新都必须使用同一份签名，丢失后只能更换包名重新发布。
+
+## 项目结构
+
+```
+app/src/main/java/com/newspush/app/
+├── data/model       实体与分区枚举
+├── data/source      RSS 源定义、抓取与解析
+├── data/local       Room 数据库
+├── data/prefs       设置持久化
+├── data/repository  仓库与同步流程
+├── data/remote      DeepSeek 客户端
+├── domain           摘要、分类、重要度评分
+├── work             定时任务、调度与通知
+└── ui               Compose 界面
+```
+
+根目录下另有若干 Windows PowerShell 辅助脚本（环境安装、一键构建、局域网分发 APK、订阅源可用性检查、本地网络代理等），脚本内的绝对路径需要按自己的环境调整，非 Windows 环境可以忽略。
+
+## 已知限制
+
+- 财经、体育、娱乐、健康、军事、科学等分区没有专属订阅源，内容来自通用源的文本分类结果。
+- 编程分区包含 Hacker News 与 DEV Community 两个英文源。
+- 摘要与分类依赖 DeepSeek 时会受网络与额度影响，失败时静默回退到本地算法，不会报错。
+- 尚未编写单元测试与 UI 测试。
+
+## 数据与隐私
+
+- 新闻、收藏与设置全部保存在设备本地（Room + DataStore），应用没有统计或上报逻辑。
+- 应用只在两种情况下联网：抓取你启用的 RSS 源；配置了 Key 时调用 DeepSeek 接口。
+- DeepSeek API Key 以明文形式保存在应用私有目录的 DataStore 里。如果对安全性要求更高，可以自行接入 Android Keystore 加密。
+
+## 许可证
+
+本项目尚未附带开源许可证，因此默认保留所有权利。如需在其它项目中使用，请先联系作者。
