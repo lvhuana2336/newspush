@@ -1,0 +1,18 @@
+# 统一换行符：仓库内文本文件一律用 LF，避免 Windows 上反复出现 CRLF 警告
+* text=auto eol=lf
+
+# Windows 批处理与脚本按 CRLF 检出不参与自动转换
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制文件不做任何转换
+*.jar binary
+*.apk binary
+*.aab binary
+*.jks binary
+*.keystore binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.zip binary
