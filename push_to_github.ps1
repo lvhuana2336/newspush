@@ -9,7 +9,7 @@ param(
 $ErrorActionPreference = "Continue"
 $env:GIT_TERMINAL_PROMPT = "0"
 
-# 沙箱里预设的代理指向一个死端口，这里先清掉，再按需套用真实代理
+# The sandbox presets a proxy on a dead port; clear it, then apply the real proxy if given
 $env:HTTP_PROXY = ""
 $env:HTTPS_PROXY = ""
 $env:ALL_PROXY = ""
@@ -33,8 +33,8 @@ if ([string]::IsNullOrWhiteSpace($token)) {
     throw "token file is empty: $TokenFile"
 }
 
-# 用户名写在 URL 里，密码交给 GIT_ASKPASS，
-# 这样 token 不会出现在命令行参数、URL 或日志输出中。
+# Username goes into the URL, the password is answered by GIT_ASKPASS,
+# so the token never appears in command line arguments, the URL, or logs.
 $askpass = Join-Path $env:TEMP "news-push-askpass.cmd"
 Set-Content -LiteralPath $askpass -Value ("@echo off" + [Environment]::NewLine + "type `"$TokenFile`"") -Encoding ASCII
 $env:GIT_ASKPASS = $askpass
