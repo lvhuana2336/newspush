@@ -1,0 +1,17 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+*.aab
+app/build
+
+# 签名相关：这些绝对不能进版本库
+/keystore.properties
+*.jks
+*.keystore
