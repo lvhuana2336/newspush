@@ -63,6 +63,8 @@ fun SettingsScreen(onBack: () -> Unit) {
     var threshold by remember(settings.importanceThreshold) { mutableStateOf(settings.importanceThreshold) }
     var apiKey by remember(settings.deepSeekApiKey) { mutableStateOf(settings.deepSeekApiKey) }
     var blockedWord by remember { mutableStateOf("") }
+    var socialUrl by remember(settings.socialApiUrl) { mutableStateOf(settings.socialApiUrl) }
+    var socialInvite by remember(settings.socialInviteCode) { mutableStateOf(settings.socialInviteCode) }
 
     val knownSources = (
         DefaultFeeds.list.map { it.sourceName } +
@@ -217,6 +219,52 @@ fun SettingsScreen(onBack: () -> Unit) {
                     enabled = settings.deepSeekApiKey.isNotBlank()
                 )
             }
+
+            Text("B 站社交源", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "填写服务器地址和邀请码；首次连接会自动注册本机并领取设备 Key。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            OutlinedTextField(
+                value = socialUrl,
+                onValueChange = { socialUrl = it },
+                label = { Text("服务器地址") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = socialInvite,
+                onValueChange = { socialInvite = it },
+                label = { Text("邀请码") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Button(
+                onClick = { viewModel.connectSocial(socialUrl, socialInvite) },
+                enabled = !isRefreshing,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (settings.socialApiKey.isNotBlank()) "重新连接并同步" else "连接并同步")
+            }
+            Text(
+                text = if (settings.socialApiKey.isNotBlank()) "状态：已连接" else "状态：未连接",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (settings.socialLastError.isNotBlank()) {
+                Text(
+                    text = "错误：" + settings.socialLastError,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+            Text(
+                "当前后端使用临时 Cloudflare 隧道；隧道重启后地址会变化，需要在这里更新。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             Text("新闻分区", style = MaterialTheme.typography.titleMedium)
             Category.selectable().chunked(2).forEach { row ->

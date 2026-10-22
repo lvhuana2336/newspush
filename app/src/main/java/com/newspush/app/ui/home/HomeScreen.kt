@@ -202,6 +202,10 @@ private fun NewsCard(article: NewsArticle, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 CategoryBadge(article.category)
+                if (article.platform == "bilibili") {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    PlatformBadge()
+                }
                 if (!article.translatedSummary.isNullOrBlank()) {
                     Spacer(modifier = Modifier.width(6.dp))
                     TranslatedBadge()
@@ -260,6 +264,21 @@ private fun TranslatedBadge() {
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    }
+}
+
+@Composable
+private fun PlatformBadge() {
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = MaterialTheme.colorScheme.tertiaryContainer
+    ) {
+        Text(
+            text = "B站",
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onTertiaryContainer
         )
     }
 }

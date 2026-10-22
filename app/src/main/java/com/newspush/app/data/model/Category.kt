@@ -62,6 +62,9 @@ enum class Category(
     companion object {
         fun fromId(id: String): Category = entries.firstOrNull { it.id == id } ?: GENERAL
 
+        fun fromDisplayName(name: String): Category =
+            entries.firstOrNull { it.displayName == name } ?: GENERAL
+
         fun selectable(): List<Category> = entries.filter { it != GENERAL }
     }
 }

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -42,7 +43,13 @@ class SettingsRepository(context: Context) {
             pushWindowStartMinutes = preferences[Keys.PUSH_WINDOW_START] ?: (8 * 60),
             pushWindowEndMinutes = preferences[Keys.PUSH_WINDOW_END] ?: (22 * 60),
             blacklistKeywords = (preferences[Keys.BLACKLIST_KEYWORDS] ?: emptySet()).sorted(),
-            blacklistSources = preferences[Keys.BLACKLIST_SOURCES] ?: emptySet()
+            blacklistSources = preferences[Keys.BLACKLIST_SOURCES] ?: emptySet(),
+            socialApiUrl = preferences[Keys.SOCIAL_API_URL] ?: DEFAULT_SOCIAL_API_URL,
+            socialInviteCode = preferences[Keys.SOCIAL_INVITE_CODE] ?: "",
+            socialApiKey = preferences[Keys.SOCIAL_API_KEY] ?: "",
+            socialDeviceId = preferences[Keys.SOCIAL_DEVICE_ID] ?: "",
+            socialCursor = preferences[Keys.SOCIAL_CURSOR] ?: 0L,
+            socialLastError = preferences[Keys.SOCIAL_LAST_ERROR] ?: ""
         )
     }
 
@@ -127,6 +134,30 @@ class SettingsRepository(context: Context) {
         }
     }
 
+    suspend fun setSocialApiUrl(url: String) {
+        dataStore.edit { it[Keys.SOCIAL_API_URL] = url.trim() }
+    }
+
+    suspend fun setSocialInviteCode(code: String) {
+        dataStore.edit { it[Keys.SOCIAL_INVITE_CODE] = code.trim() }
+    }
+
+    suspend fun setSocialApiKey(key: String) {
+        dataStore.edit { it[Keys.SOCIAL_API_KEY] = key.trim() }
+    }
+
+    suspend fun setSocialDeviceId(id: String) {
+        dataStore.edit { it[Keys.SOCIAL_DEVICE_ID] = id.trim() }
+    }
+
+    suspend fun setSocialCursor(cursor: Long) {
+        dataStore.edit { it[Keys.SOCIAL_CURSOR] = cursor }
+    }
+
+    suspend fun setSocialLastError(message: String) {
+        dataStore.edit { it[Keys.SOCIAL_LAST_ERROR] = message.take(300) }
+    }
+
     suspend fun addCustomFeed(feed: RssFeed) {
         dataStore.edit { preferences ->
             val feeds = decodeFeeds(preferences[Keys.CUSTOM_FEEDS]).toMutableList()
@@ -189,9 +220,16 @@ class SettingsRepository(context: Context) {
         val PUSH_WINDOW_END = intPreferencesKey("push_window_end_minutes")
         val BLACKLIST_KEYWORDS = stringSetPreferencesKey("blacklist_keywords")
         val BLACKLIST_SOURCES = stringSetPreferencesKey("blacklist_sources")
+        val SOCIAL_API_URL = stringPreferencesKey("social_api_url")
+        val SOCIAL_INVITE_CODE = stringPreferencesKey("social_invite_code")
+        val SOCIAL_API_KEY = stringPreferencesKey("social_api_key")
+        val SOCIAL_DEVICE_ID = stringPreferencesKey("social_device_id")
+        val SOCIAL_CURSOR = longPreferencesKey("social_cursor")
+        val SOCIAL_LAST_ERROR = stringPreferencesKey("social_last_error")
     }
 
     private companion object {
+        const val DEFAULT_SOCIAL_API_URL = "https://belts-accurately-apache-fares.trycloudflare.com"
         const val SCHEMA_VERSION = 2
         val CATEGORIES_ADDED_AFTER_V1 = setOf(Category.PROGRAMMING.id)
     }

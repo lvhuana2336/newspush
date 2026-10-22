@@ -11,6 +11,7 @@ data class NewsArticle(
     val translatedSummary: String? = null,
     val content: String,
     val category: String,
+    val platform: String = "rss",
     val sourceName: String,
     val sourceUrl: String,
     val imageUrl: String? = null,

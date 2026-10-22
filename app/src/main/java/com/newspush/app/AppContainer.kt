@@ -4,6 +4,7 @@ import android.content.Context
 import com.newspush.app.data.local.AppDatabase
 import com.newspush.app.data.prefs.SettingsRepository
 import com.newspush.app.data.remote.DeepSeekClient
+import com.newspush.app.data.remote.SocialApiClient
 import com.newspush.app.data.repository.NewsRepository
 import com.newspush.app.data.source.NewsFetcher
 import com.newspush.app.domain.NewsProcessor
@@ -38,6 +39,7 @@ class AppContainer(context: Context) {
         .build()
     private val deepSeekClient = DeepSeekClient(deepSeekHttpClient)
     private val processor = NewsProcessor(deepSeekClient)
-    val repository = NewsRepository(dao, settingsRepository, fetcher, processor)
+    private val socialApiClient = SocialApiClient(okHttpClient)
+    val repository = NewsRepository(dao, settingsRepository, fetcher, processor, socialApiClient)
     val syncRunner = SyncRunner(repository, settingsRepository, dao, notificationHelper)
 }

@@ -39,6 +39,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun connectSocial(url: String, inviteCode: String) {
+        viewModelScope.launch {
+            container.settingsRepository.setSocialApiUrl(url)
+            container.settingsRepository.setSocialInviteCode(inviteCode)
+            container.settingsRepository.setSocialApiKey("")
+            container.settingsRepository.setSocialCursor(0)
+            container.settingsRepository.setSocialLastError("")
+            refreshNews()
+        }
+    }
+
     fun setNotificationsEnabled(enabled: Boolean) {
         viewModelScope.launch { container.settingsRepository.setNotificationsEnabled(enabled) }
     }

@@ -14,5 +14,11 @@ data class AppSettings(
     val deepSeekApiKey: String = "",
     val translateEnglishSummaries: Boolean = false,
     val blacklistKeywords: List<String> = emptyList(),
-    val blacklistSources: Set<String> = emptySet()
+    val blacklistSources: Set<String> = emptySet(),
+    val socialApiUrl: String = "https://belts-accurately-apache-fares.trycloudflare.com",
+    val socialInviteCode: String = "",
+    val socialApiKey: String = "",
+    val socialDeviceId: String = "",
+    val socialCursor: Long = 0,
+    val socialLastError: String = ""
 )

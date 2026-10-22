@@ -18,6 +18,7 @@ class NewsProcessor(private val deepSeekClient: DeepSeekClient?) {
         feed: RssFeed,
         apiKey: String,
         translateEnglishSummaries: Boolean,
+        platform: String = "rss",
         fetchedAt: Long = System.currentTimeMillis()
     ): NewsArticle {
         val title = cleanHtml(item.title)
@@ -59,6 +60,7 @@ class NewsProcessor(private val deepSeekClient: DeepSeekClient?) {
             translatedSummary = translatedSummary,
             content = plainText,
             category = category.id,
+            platform = platform,
             sourceName = feed.sourceName,
             sourceUrl = link,
             imageUrl = item.imageUrl,

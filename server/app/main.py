@@ -270,9 +270,13 @@ async def feed(
     cursor: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     category: Optional[str] = None,
+    latest: bool = Query(False),
     device: Any = Depends(require_device),
 ) -> Dict[str, Any]:
-    rows = db.list_feed(cursor, limit, category)
+    if latest and cursor == 0:
+        rows = db.list_feed_latest(limit, category)
+    else:
+        rows = db.list_feed(cursor, limit, category)
     next_cursor = int(rows[-1]["id"]) if rows else cursor
     return {
         "items": [_serialize_post(row) for row in rows],

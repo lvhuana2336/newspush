@@ -132,6 +132,21 @@ def list_feed(after_id: int, limit: int, category: Optional[str] = None) -> List
         return list(rows)
 
 
+def list_feed_latest(limit: int, category: Optional[str] = None) -> List[sqlite3.Row]:
+    with connect() as conn:
+        if category:
+            rows = conn.execute(
+                "SELECT * FROM posts WHERE category = ? ORDER BY id DESC LIMIT ?",
+                (category, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM posts ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return list(reversed(rows))
+
+
 def list_accounts(enabled_only: bool = False) -> List[sqlite3.Row]:
     with connect() as conn:
         sql = "SELECT * FROM accounts"
