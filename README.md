@@ -35,7 +35,7 @@
 
 ## 下载安装
 
-最新安装包发布在 [Releases](https://github.com/lvhuana2336/newspush/releases) 页面，文件名形如 `newspush-1.0-release.apk`。
+最新安装包发布在 [Releases](https://github.com/lvhuana2336/newspush/releases) 页面，文件名形如 `newspush-1.1-release.apk`。
 
 下载后在手机上点开安装，首次需要在系统里允许「安装未知应用」。最低系统版本 Android 8.0（API 26）。
 
