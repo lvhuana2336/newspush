@@ -172,7 +172,9 @@ chown -R newspush:newspush /opt/newspush /var/backups/newspush
 在**你自己的电脑**上执行（PowerShell）：
 
 ```powershell
-scp -r D:\code\news\server\* root@<EIP>:/opt/newspush/server/
+scp -r D:\code\news\server\app D:\code\news\server\deploy `
+  D:\code\news\server\requirements.txt D:\code\news\server\.env.example `
+  root@<EIP>:/opt/newspush/server/
 ```
 
 服务器上修正权限：
