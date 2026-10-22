@@ -15,3 +15,10 @@ app/build
 /keystore.properties
 *.jks
 *.keystore
+
+# Python backend
+__pycache__/
+*.pyc
+.venv/
+/server/.venv/
+/server/data/

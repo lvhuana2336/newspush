@@ -1,0 +1,63 @@
+[
+  {"uid": "456664753", "name": "央视新闻", "category": "国内", "official": true, "priority": 10, "interval_minutes": 10},
+  {"uid": "473837611", "name": "新华社", "category": "国内", "official": true, "priority": 10, "interval_minutes": 10},
+  {"uid": "1131457022", "name": "人民日报", "category": "国内", "official": true, "priority": 10, "interval_minutes": 10},
+  {"uid": "3494350480738883", "name": "中国新闻网", "category": "国内", "official": true, "priority": 9, "interval_minutes": 10},
+  {"uid": "627414915", "name": "澎湃新闻", "category": "国内", "official": true, "priority": 9, "interval_minutes": 10},
+
+  {"uid": "23947287", "name": "小约翰可汗", "category": "国际", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "10330740", "name": "观察者网", "category": "国际", "official": true, "priority": 9, "interval_minutes": 10},
+  {"uid": "346563107", "name": "波士顿圆脸", "category": "国际", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "416220301", "name": "凤凰卫视", "category": "国际", "official": true, "priority": 8, "interval_minutes": 10},
+  {"uid": "1770162442", "name": "参考消息", "category": "国际", "official": true, "priority": 9, "interval_minutes": 10},
+
+  {"uid": "37663924", "name": "硬核的半佛仙人", "category": "财经", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "520819684", "name": "小Lin说", "category": "财经", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "438173577", "name": "卢克文工作室", "category": "财经", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "472747194", "name": "巫师财经", "category": "财经", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "106086780", "name": "央视财经", "category": "财经", "official": true, "priority": 9, "interval_minutes": 10},
+
+  {"uid": "946974", "name": "影视飓风", "category": "科技", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "163637592", "name": "老师好我叫何同学", "category": "科技", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "25876945", "name": "极客湾Geekerwan", "category": "科技", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "19319172", "name": "差评君", "category": "科技", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "673779175", "name": "量子位", "category": "科技", "official": true, "priority": 8, "interval_minutes": 10},
+
+  {"uid": "37974444", "name": "黑马程序员", "category": "编程", "official": true, "priority": 6, "interval_minutes": 20},
+  {"uid": "302417610", "name": "尚硅谷", "category": "编程", "official": true, "priority": 6, "interval_minutes": 20},
+  {"uid": "12890453", "name": "程序员鱼皮", "category": "编程", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "162862089", "name": "蓝桥云课", "category": "编程", "official": true, "priority": 6, "interval_minutes": 20},
+  {"uid": "99210573", "name": "小满zs", "category": "编程", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "555047479", "name": "我是程序员小灰", "category": "编程", "official": false, "priority": 5, "interval_minutes": 20},
+
+  {"uid": "414615582", "name": "咪咕体育", "category": "体育", "official": true, "priority": 8, "interval_minutes": 10},
+  {"uid": "320563481", "name": "央视网体育", "category": "体育", "official": true, "priority": 9, "interval_minutes": 10},
+  {"uid": "3707044701932167", "name": "天下足球", "category": "体育", "official": true, "priority": 8, "interval_minutes": 10},
+
+  {"uid": "15773384", "name": "哔哩哔哩电影", "category": "娱乐", "official": true, "priority": 7, "interval_minutes": 20},
+  {"uid": "27218150", "name": "刘哔电影", "category": "娱乐", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "323588182", "name": "毒舌电影编辑部", "category": "娱乐", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "491408087", "name": "娱乐资本论", "category": "娱乐", "official": true, "priority": 6, "interval_minutes": 20},
+
+  {"uid": "15982391", "name": "丁香医生", "category": "健康", "official": true, "priority": 7, "interval_minutes": 20},
+  {"uid": "92601724", "name": "科普中国", "category": "健康", "official": true, "priority": 8, "interval_minutes": 20},
+  {"uid": "387460933", "name": "营养师顾中一", "category": "健康", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "647411513", "name": "薄世宁医生", "category": "健康", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "210954454", "name": "健康中国官方账号", "category": "健康", "official": true, "priority": 9, "interval_minutes": 10},
+
+  {"uid": "46470268", "name": "央视军事", "category": "军事", "official": true, "priority": 9, "interval_minutes": 10},
+  {"uid": "189866857", "name": "国防时报TV", "category": "军事", "official": true, "priority": 8, "interval_minutes": 10},
+  {"uid": "435931665", "name": "军武志", "category": "军事", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "1277161587", "name": "刘晓非观察室", "category": "军事", "official": true, "priority": 6, "interval_minutes": 20},
+
+  {"uid": "14804670", "name": "无穷小亮的科普日常", "category": "科学", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "326427334", "name": "星球研究所", "category": "科学", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "72270557", "name": "芳斯塔芙", "category": "科学", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "9458053", "name": "李永乐老师官方", "category": "科学", "official": false, "priority": 5, "interval_minutes": 20},
+  {"uid": "407045223", "name": "二次元的中科院物理所", "category": "科学", "official": true, "priority": 7, "interval_minutes": 20},
+
+  {"uid": "6250993", "name": "看看新闻Knews", "category": "社会", "official": true, "priority": 8, "interval_minutes": 10},
+  {"uid": "1955655610", "name": "九派新闻", "category": "社会", "official": true, "priority": 8, "interval_minutes": 10},
+  {"uid": "493585346", "name": "南方都市报", "category": "社会", "official": true, "priority": 8, "interval_minutes": 10},
+  {"uid": "38996445", "name": "荔枝新闻", "category": "社会", "official": true, "priority": 7, "interval_minutes": 10}
+]

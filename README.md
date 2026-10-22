@@ -161,6 +161,12 @@ app/src/main/java/com/newspush/app/
 
 根目录下另有若干 Windows PowerShell 辅助脚本（环境安装、一键构建、局域网分发 APK、订阅源可用性检查、本地网络代理等），脚本内的绝对路径需要按自己的环境调整，非 Windows 环境可以忽略。
 
+## 社交源后端（可选）
+
+`server/` 目录包含一个可选的 B 站采集后端：定时抓取 50 个官方媒体 / UP 主的最新视频（标题 + 简介），向 App 暴露统一的 `/v1/feed` 接口，并支持设备首次启动自动领取 API Key 与邀请码开关。
+
+它不依赖 Redis 或 Postgres，单进程 FastAPI + SQLite 即可运行在 2 核 2G 的小型服务器上。完整的部署步骤（阿里云安全组、Ubuntu 初始化、systemd、HTTPS、备份）见 [server/README.md](server/README.md)。
+
 ## 已知限制
 
 - 财经、体育、娱乐、健康、军事、科学等分区没有专属订阅源，内容来自通用源的文本分类结果。

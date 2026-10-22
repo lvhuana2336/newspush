@@ -1,0 +1,1 @@
+"""NewsPush social source backend."""

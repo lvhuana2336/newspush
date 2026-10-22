@@ -1,0 +1,4 @@
+[
+  {"uid": "456664753", "name": "央视新闻", "category": "国内", "official": true, "priority": 10, "interval_minutes": 10},
+  {"uid": "12890453", "name": "程序员鱼皮", "category": "编程", "official": false, "priority": 5, "interval_minutes": 20}
+]
