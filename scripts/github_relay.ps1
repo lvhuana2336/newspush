@@ -1,7 +1,7 @@
 param(
     [int]$ListenPort = 8443,
     [string]$LogFile = "D:\AndroidDev\logs\github-relay.log",
-    [int]$ConnectionTimeoutSeconds = 240
+    [int]$ConnectionTimeoutSeconds = 1800
 )
 
 # Minimal HTTP CONNECT proxy.
