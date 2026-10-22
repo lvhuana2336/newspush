@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -17,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -53,6 +56,7 @@ import com.newspush.app.util.formatClockMinutes
 fun SettingsScreen(onBack: () -> Unit) {
     val viewModel: SettingsViewModel = viewModel()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
     var feedName by remember { mutableStateOf("") }
     var feedUrl by remember { mutableStateOf("") }
@@ -86,6 +90,23 @@ fun SettingsScreen(onBack: () -> Unit) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
+            Button(
+                onClick = viewModel::refreshNews,
+                enabled = !isRefreshing,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isRefreshing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("正在刷新…")
+                } else {
+                    Text("立即刷新新闻")
+                }
+            }
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("推送通知", style = MaterialTheme.typography.titleMedium)
@@ -175,6 +196,26 @@ fun SettingsScreen(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("保存 API Key")
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("翻译英文摘要", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        if (settings.deepSeekApiKey.isBlank()) {
+                            "需要先保存 DeepSeek API Key"
+                        } else {
+                            "把英文新闻的摘要翻译成中文（对新抓取的新闻生效）"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = settings.translateEnglishSummaries,
+                    onCheckedChange = viewModel::setTranslateEnglishSummaries,
+                    enabled = settings.deepSeekApiKey.isNotBlank()
+                )
             }
 
             Text("新闻分区", style = MaterialTheme.typography.titleMedium)

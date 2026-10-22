@@ -17,6 +17,9 @@ data class EnrichedResult(
 
 /**
  * DeepSeek 的 Chat Completions 客户端（OpenAI 兼容协议）。
+ *
+ * 一次调用同时拿到分类与中文摘要。英文条目把这个中文摘要当作译文使用，
+ * 因此开启英文摘要翻译不会产生额外的 API 调用。
  */
 class DeepSeekClient(private val client: OkHttpClient) {
     suspend fun summarizeAndClassify(
@@ -41,7 +44,7 @@ class DeepSeekClient(private val client: OkHttpClient) {
             .url("$BASE_URL/chat/completions")
             .header("Authorization", "Bearer $apiKey")
             .header("Content-Type", "application/json")
-            .post(body.toString().toRequestBody("application/json".toMediaType()))
+            .post(body.toString().toRequestBody(JSON_MEDIA_TYPE))
             .build()
 
         client.newCall(request).execute().use { response ->
@@ -53,8 +56,8 @@ class DeepSeekClient(private val client: OkHttpClient) {
 
     private fun parse(responseBody: String): EnrichedResult? {
         return try {
-            val root = JSONObject(responseBody)
-            val content = root.getJSONArray("choices")
+            val content = JSONObject(responseBody)
+                .getJSONArray("choices")
                 .getJSONObject(0)
                 .getJSONObject("message")
                 .getString("content")
@@ -97,5 +100,6 @@ class DeepSeekClient(private val client: OkHttpClient) {
             "你是中文新闻编辑助手。请阅读给定新闻，完成两项任务：1) 用不超过120个汉字概括核心事实，不要编造细节；" +
                 "2) 从候选分类中选择最贴切的一个。必须只输出一个 JSON 对象，格式为 " +
                 "{\"category\":\"分类id\",\"summary\":\"摘要\"}。"
+        val JSON_MEDIA_TYPE = "application/json".toMediaType()
     }
 }

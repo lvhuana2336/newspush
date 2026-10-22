@@ -98,7 +98,24 @@ fun DetailScreen(onBack: () -> Unit) {
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(text = current.summary, style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = current.translatedSummary ?: current.summary,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                if (!current.translatedSummary.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "英文原文摘要",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = current.summary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 if (current.content.isNotBlank() && current.content != current.summary) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(

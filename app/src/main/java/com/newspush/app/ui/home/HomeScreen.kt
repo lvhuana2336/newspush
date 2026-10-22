@@ -1,6 +1,7 @@
 package com.newspush.app.ui.home
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,9 +15,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
@@ -30,8 +34,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +50,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.newspush.app.data.model.Category
 import com.newspush.app.data.model.NewsArticle
 import com.newspush.app.util.relativeTime
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,17 +60,23 @@ fun HomeScreen(
 ) {
     val viewModel: HomeViewModel = viewModel()
     val articles by viewModel.articles.collectAsStateWithLifecycle()
-    val selected by viewModel.selected.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+
+    val categories = remember { listOf(Category.GENERAL) + Category.selectable() }
+    val pagerState = rememberPagerState(pageCount = { categories.size })
+    val chipListState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+
+    // 左右滑动切换分区时，让顶部栏目标签跟随滚动
+    LaunchedEffect(pagerState.currentPage) {
+        chipListState.animateScrollToItem(pagerState.currentPage)
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("新闻推送") },
                 actions = {
-                    IconButton(onClick = viewModel::refresh) {
-                        Icon(Icons.Default.Refresh, contentDescription = "刷新")
-                    }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "设置")
                     }
@@ -74,38 +89,77 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            CategoryChips(selected = selected, onSelect = viewModel::select)
-            if (articles.isEmpty()) {
-                EmptyState(isRefreshing)
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(articles, key = { it.id }) { article ->
-                        NewsCard(article = article, onClick = { onOpenArticle(article.id) })
+            LazyRow(
+                state = chipListState,
+                contentPadding = PaddingValues(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                itemsIndexed(categories) { index, category ->
+                    FilterChip(
+                        selected = pagerState.currentPage == index,
+                        onClick = {
+                            scope.launch { pagerState.animateScrollToPage(index) }
+                        },
+                        label = { Text(category.displayName) }
+                    )
+                }
+            }
+
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                val category = categories[page]
+                val pageArticles = remember(articles, category) {
+                    if (category == Category.GENERAL) {
+                        articles
+                    } else {
+                        articles.filter { it.category == category.id }
                     }
                 }
+                CategoryPage(
+                    articles = pageArticles,
+                    isRefreshing = isRefreshing,
+                    onRefresh = viewModel::refresh,
+                    onOpenArticle = onOpenArticle
+                )
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CategoryChips(selected: Category, onSelect: (Category) -> Unit) {
-    val categories = listOf(Category.GENERAL) + Category.selectable()
-    LazyRow(
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+private fun CategoryPage(
+    articles: List<NewsArticle>,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
+    onOpenArticle: (String) -> Unit
+) {
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize()
     ) {
-        items(categories) { category ->
-            FilterChip(
-                selected = selected == category,
-                onClick = { onSelect(category) },
-                label = { Text(category.displayName) }
-            )
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            if (articles.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier.fillParentMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        EmptyState(isRefreshing)
+                    }
+                }
+            } else {
+                items(articles, key = { it.id }) { article ->
+                    NewsCard(article = article, onClick = { onOpenArticle(article.id) })
+                }
+            }
         }
     }
 }
@@ -118,6 +172,8 @@ private fun NewsCard(article: NewsArticle, onClick: () -> Unit) {
     } else {
         MaterialTheme.colorScheme.surface
     }
+    val displaySummary = article.translatedSummary ?: article.summary
+
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -131,10 +187,10 @@ private fun NewsCard(article: NewsArticle, onClick: () -> Unit) {
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            if (article.summary.isNotBlank()) {
+            if (displaySummary.isNotBlank()) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = article.summary,
+                    text = displaySummary,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis
@@ -146,6 +202,10 @@ private fun NewsCard(article: NewsArticle, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 CategoryBadge(article.category)
+                if (!article.translatedSummary.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    TranslatedBadge()
+                }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = article.sourceName,
@@ -190,6 +250,21 @@ private fun CategoryBadge(categoryId: String) {
 }
 
 @Composable
+private fun TranslatedBadge() {
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer
+    ) {
+        Text(
+            text = "译",
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    }
+}
+
+@Composable
 private fun EmptyState(isRefreshing: Boolean) {
     Column(
         modifier = Modifier
@@ -204,7 +279,7 @@ private fun EmptyState(isRefreshing: Boolean) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = if (isRefreshing) "请稍候" else "点击右上角刷新，或检查网络与订阅源",
+            text = if (isRefreshing) "请稍候" else "在顶部下拉即可刷新，或检查网络与订阅源",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

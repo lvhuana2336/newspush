@@ -37,6 +37,7 @@ class SettingsRepository(context: Context) {
             importanceThreshold = preferences[Keys.IMPORTANCE_THRESHOLD] ?: 0.45f,
             customFeeds = decodeFeeds(preferences[Keys.CUSTOM_FEEDS]),
             deepSeekApiKey = preferences[Keys.DEEPSEEK_API_KEY] ?: "",
+            translateEnglishSummaries = preferences[Keys.TRANSLATE_ENGLISH] ?: false,
             pushWindowEnabled = preferences[Keys.PUSH_WINDOW_ENABLED] ?: true,
             pushWindowStartMinutes = preferences[Keys.PUSH_WINDOW_START] ?: (8 * 60),
             pushWindowEndMinutes = preferences[Keys.PUSH_WINDOW_END] ?: (22 * 60),
@@ -83,6 +84,10 @@ class SettingsRepository(context: Context) {
 
     suspend fun setDeepSeekApiKey(apiKey: String) {
         dataStore.edit { it[Keys.DEEPSEEK_API_KEY] = apiKey.trim() }
+    }
+
+    suspend fun setTranslateEnglishSummaries(enabled: Boolean) {
+        dataStore.edit { it[Keys.TRANSLATE_ENGLISH] = enabled }
     }
 
     suspend fun setPushWindowEnabled(enabled: Boolean) {
@@ -178,6 +183,7 @@ class SettingsRepository(context: Context) {
         val IMPORTANCE_THRESHOLD = floatPreferencesKey("importance_threshold")
         val CUSTOM_FEEDS = stringPreferencesKey("custom_feeds")
         val DEEPSEEK_API_KEY = stringPreferencesKey("deepseek_api_key")
+        val TRANSLATE_ENGLISH = booleanPreferencesKey("translate_english_summaries")
         val PUSH_WINDOW_ENABLED = booleanPreferencesKey("push_window_enabled")
         val PUSH_WINDOW_START = intPreferencesKey("push_window_start_minutes")
         val PUSH_WINDOW_END = intPreferencesKey("push_window_end_minutes")

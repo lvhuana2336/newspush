@@ -12,6 +12,7 @@ data class AppSettings(
     val importanceThreshold: Float = 0.45f,
     val customFeeds: List<RssFeed> = emptyList(),
     val deepSeekApiKey: String = "",
+    val translateEnglishSummaries: Boolean = false,
     val blacklistKeywords: List<String> = emptyList(),
     val blacklistSources: Set<String> = emptySet()
 )

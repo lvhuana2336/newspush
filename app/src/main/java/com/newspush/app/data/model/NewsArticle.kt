@@ -8,6 +8,7 @@ data class NewsArticle(
     @PrimaryKey val id: String,
     val title: String,
     val summary: String,
+    val translatedSummary: String? = null,
     val content: String,
     val category: String,
     val sourceName: String,

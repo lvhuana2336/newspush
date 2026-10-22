@@ -8,8 +8,10 @@ import com.newspush.app.data.model.AppSettings
 import com.newspush.app.data.model.Category
 import com.newspush.app.data.source.RssFeed
 import com.newspush.app.work.WorkerScheduler
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -19,6 +21,23 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     val settings: StateFlow<AppSettings> = container.settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppSettings())
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    fun refreshNews() {
+        if (_isRefreshing.value) return
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                container.syncRunner.run()
+            } catch (_: Exception) {
+                // 单次刷新失败不影响后续定时任务
+            } finally {
+                _isRefreshing.value = false
+            }
+        }
+    }
 
     fun setNotificationsEnabled(enabled: Boolean) {
         viewModelScope.launch { container.settingsRepository.setNotificationsEnabled(enabled) }
@@ -37,6 +56,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun setDeepSeekApiKey(apiKey: String) {
         viewModelScope.launch { container.settingsRepository.setDeepSeekApiKey(apiKey) }
+    }
+
+    fun setTranslateEnglishSummaries(enabled: Boolean) {
+        viewModelScope.launch { container.settingsRepository.setTranslateEnglishSummaries(enabled) }
     }
 
     fun setPushWindowEnabled(enabled: Boolean) {

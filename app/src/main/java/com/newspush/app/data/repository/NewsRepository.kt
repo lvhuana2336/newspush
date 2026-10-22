@@ -89,7 +89,13 @@ class NewsRepository(
                     semaphore.acquire()
                     try {
                         try {
-                            processor.toArticle(item, feed, settings.deepSeekApiKey, fetchedAt)
+                            processor.toArticle(
+                                item = item,
+                                feed = feed,
+                                apiKey = settings.deepSeekApiKey,
+                                translateEnglishSummaries = settings.translateEnglishSummaries,
+                                fetchedAt = fetchedAt
+                            )
                         } catch (_: Exception) {
                             null
                         }
