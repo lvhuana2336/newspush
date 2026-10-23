@@ -38,4 +38,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
+    fun delete(id: String) {
+        viewModelScope.launch { container.repository.markDeleted(id) }
+    }
+
+    fun toggleStarred(id: String) {
+        viewModelScope.launch { container.repository.toggleStarred(id) }
+    }
+
+    fun setReadLater(id: String, readLater: Boolean) {
+        viewModelScope.launch { container.repository.setReadLater(id, readLater) }
+    }
 }

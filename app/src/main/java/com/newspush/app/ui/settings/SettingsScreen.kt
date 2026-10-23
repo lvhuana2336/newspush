@@ -68,6 +68,7 @@ import com.newspush.app.data.model.Category
 import com.newspush.app.data.source.DefaultFeeds
 import com.newspush.app.util.formatClockMinutes
 import com.newspush.app.util.decodeSampledBitmap
+import com.newspush.app.util.relativeTime
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -76,6 +77,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     val viewModel: SettingsViewModel = viewModel()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val trashItems by viewModel.trashItems.collectAsStateWithLifecycle()
 
     var feedName by remember { mutableStateOf("") }
     var feedUrl by remember { mutableStateOf("") }
@@ -453,6 +455,41 @@ fun SettingsScreen(onBack: () -> Unit) {
                         onClick = { viewModel.toggleSourceBlocked(name) },
                         label = { Text(name) }
                     )
+                }
+            }
+
+            Text("回收站", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "长按新闻选择删除后会进入这里，可随时恢复。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (trashItems.isEmpty()) {
+                Text(
+                    "回收站为空",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                trashItems.forEach { article ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                article.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                article.sourceName + " · " + relativeTime(article.publishDate),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        TextButton(onClick = { viewModel.restore(article.id) }) {
+                            Text("恢复")
+                        }
+                    }
                 }
             }
 

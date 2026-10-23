@@ -20,5 +20,8 @@ data class NewsArticle(
     val isRead: Boolean = false,
     val isStarred: Boolean = false,
     val isNotified: Boolean = false,
+    val isDeleted: Boolean = false,
+    val deletedAt: Long? = null,
+    val isReadLater: Boolean = false,
     val fetchedAt: Long
 )

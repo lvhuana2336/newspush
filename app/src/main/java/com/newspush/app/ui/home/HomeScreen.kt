@@ -1,7 +1,14 @@
 package com.newspush.app.ui.home
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +30,12 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,6 +44,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -49,6 +62,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -59,6 +74,12 @@ import com.newspush.app.data.model.NewsArticle
 import com.newspush.app.util.relativeTime
 import kotlinx.coroutines.launch
 
+private data class HomeTab(
+    val title: String,
+    val category: Category? = null,
+    val readLater: Boolean = false
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -68,13 +89,20 @@ fun HomeScreen(
     val viewModel: HomeViewModel = viewModel()
     val articles by viewModel.articles.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var actionArticle by remember { mutableStateOf<NewsArticle?>(null) }
 
-    val categories = remember { listOf(Category.GENERAL) + Category.selectable() }
-    val pagerState = rememberPagerState(pageCount = { categories.size })
+    val tabs = remember {
+        buildList {
+            add(HomeTab("综合", Category.GENERAL))
+            Category.selectable().forEach { add(HomeTab(it.displayName, it)) }
+            add(HomeTab("稍后再看", readLater = true))
+        }
+    }
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
     val chipListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    // 左右滑动切换分区时，让顶部栏目标签跟随滚动
     LaunchedEffect(pagerState.currentPage) {
         chipListState.animateScrollToItem(pagerState.currentPage)
     }
@@ -97,41 +125,89 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            LazyRow(
-                state = chipListState,
-                contentPadding = PaddingValues(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                itemsIndexed(categories) { index, category ->
-                    FilterChip(
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            scope.launch { pagerState.animateScrollToPage(index) }
-                        },
-                        label = { Text(category.displayName) }
-                    )
-                }
-            }
+            CategoryChips(
+                tabs = tabs,
+                selectedIndex = pagerState.currentPage,
+                listState = chipListState,
+                onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } }
+            )
 
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize()
             ) { page ->
-                val category = categories[page]
-                val pageArticles = remember(articles, category) {
-                    if (category == Category.GENERAL) {
-                        articles
-                    } else {
-                        articles.filter { it.category == category.id }
+                val tab = tabs[page]
+                val pageArticles = remember(articles, tab) {
+                    when {
+                        tab.readLater -> articles.filter { it.isReadLater }
+                        tab.category == Category.GENERAL -> articles
+                        else -> articles.filter { it.category == tab.category?.id }
                     }
                 }
                 CategoryPage(
                     articles = pageArticles,
                     isRefreshing = isRefreshing,
+                    emptyTitle = if (tab.readLater) "还没有稍后再看的新闻" else "还没有新闻",
                     onRefresh = viewModel::refresh,
-                    onOpenArticle = onOpenArticle
+                    onOpenArticle = onOpenArticle,
+                    onLongPress = { actionArticle = it }
                 )
             }
+        }
+    }
+
+    actionArticle?.let { article ->
+        NewsActionSheet(
+            article = article,
+            onDismiss = { actionArticle = null },
+            onDelete = {
+                viewModel.delete(article.id)
+                actionArticle = null
+                Toast.makeText(context, "已移入回收站", Toast.LENGTH_SHORT).show()
+            },
+            onFavorite = {
+                viewModel.toggleStarred(article.id)
+                actionArticle = null
+                Toast.makeText(
+                    context,
+                    if (article.isStarred) "已取消收藏" else "已收藏",
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onShare = {
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                clipboard?.setPrimaryClip(ClipData.newPlainText("原文链接", article.sourceUrl))
+                actionArticle = null
+                Toast.makeText(context, "原文链接已复制", Toast.LENGTH_SHORT).show()
+            },
+            onReadLater = {
+                viewModel.setReadLater(article.id, !article.isReadLater)
+                val message = if (article.isReadLater) "已移出稍后再看" else "已加入稍后再看"
+                actionArticle = null
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+}
+
+@Composable
+private fun CategoryChips(
+    tabs: List<HomeTab>,
+    selectedIndex: Int,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    onSelect: (Int) -> Unit
+) {
+    LazyRow(
+        state = listState,
+        contentPadding = PaddingValues(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        itemsIndexed(tabs) { index, tab ->
+            FilterChip(
+                selected = selectedIndex == index,
+                onClick = { onSelect(index) },
+                label = { Text(tab.title) }
+            )
         }
     }
 }
@@ -141,8 +217,10 @@ fun HomeScreen(
 private fun CategoryPage(
     articles: List<NewsArticle>,
     isRefreshing: Boolean,
+    emptyTitle: String,
     onRefresh: () -> Unit,
-    onOpenArticle: (String) -> Unit
+    onOpenArticle: (String) -> Unit,
+    onLongPress: (NewsArticle) -> Unit
 ) {
     var seenIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var newIds by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -180,7 +258,7 @@ private fun CategoryPage(
                         modifier = Modifier.fillParentMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        EmptyState(isRefreshing)
+                        EmptyState(isRefreshing, emptyTitle)
                     }
                 }
             } else {
@@ -188,7 +266,8 @@ private fun CategoryPage(
                     NewsCard(
                         article = article,
                         animate = article.id in newIds,
-                        onClick = { onOpenArticle(article.id) }
+                        onClick = { onOpenArticle(article.id) },
+                        onLongPress = { onLongPress(article) }
                     )
                 }
             }
@@ -196,9 +275,14 @@ private fun CategoryPage(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-private fun NewsCard(article: NewsArticle, animate: Boolean, onClick: () -> Unit) {
+private fun NewsCard(
+    article: NewsArticle,
+    animate: Boolean,
+    onClick: () -> Unit,
+    onLongPress: () -> Unit
+) {
     val background = if (article.isRead) {
         MaterialTheme.colorScheme.surfaceVariant
     } else {
@@ -208,6 +292,9 @@ private fun NewsCard(article: NewsArticle, animate: Boolean, onClick: () -> Unit
     val progress = remember(article.id, animate) {
         Animatable(if (animate) 0f else 1f)
     }
+    val pressScale = remember { Animatable(1f) }
+    val scope = rememberCoroutineScope()
+
     LaunchedEffect(article.id, animate) {
         if (animate) {
             progress.animateTo(1f, animationSpec = tween(420))
@@ -215,15 +302,28 @@ private fun NewsCard(article: NewsArticle, animate: Boolean, onClick: () -> Unit
     }
 
     Card(
-        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = {
+                    scope.launch {
+                        pressScale.animateTo(0.94f, tween(110))
+                        pressScale.animateTo(1f, tween(150))
+                        onLongPress()
+                    }
+                }
+            )
             .graphicsLayer {
                 val p = progress.value
                 translationX = -72.dp.toPx() * (1f - p)
                 scaleY = 0.08f + 0.92f * p
                 alpha = p
                 transformOrigin = TransformOrigin(0.5f, 0f)
+            }
+            .graphicsLayer {
+                scaleX = pressScale.value
+                scaleY = pressScale.value
             },
         colors = CardDefaults.cardColors(containerColor = background)
     ) {
@@ -266,6 +366,24 @@ private fun NewsCard(article: NewsArticle, animate: Boolean, onClick: () -> Unit
                     maxLines = 1
                 )
                 Spacer(modifier = Modifier.weight(1f))
+                if (article.isReadLater) {
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = "稍后再看",
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                if (article.isStarred) {
+                    Icon(
+                        imageVector = Icons.Default.Bookmark,
+                        contentDescription = "已收藏",
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
                 if (article.importanceScore >= 0.6f) {
                     Icon(
                         imageVector = Icons.Default.Star,
@@ -278,6 +396,89 @@ private fun NewsCard(article: NewsArticle, animate: Boolean, onClick: () -> Unit
                 Text(
                     text = relativeTime(article.publishDate),
                     style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NewsActionSheet(
+    article: NewsArticle,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit,
+    onFavorite: () -> Unit,
+    onShare: () -> Unit,
+    onReadLater: () -> Unit
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 4.dp)
+        ) {
+            Text("新闻操作", style = MaterialTheme.typography.titleMedium)
+            Text(
+                article.title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            ActionRow(
+                icon = Icons.Default.Delete,
+                title = "删除",
+                subtitle = "移入回收站，可在设置中找回",
+                onClick = onDelete
+            )
+            ActionRow(
+                icon = if (article.isStarred) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                title = if (article.isStarred) "取消收藏" else "收藏",
+                subtitle = null,
+                onClick = onFavorite
+            )
+            ActionRow(
+                icon = Icons.Default.Share,
+                title = "分享",
+                subtitle = "复制原文链接",
+                onClick = onShare
+            )
+            ActionRow(
+                icon = Icons.Default.Schedule,
+                title = if (article.isReadLater) "移出稍后再看" else "稍后再看",
+                subtitle = null,
+                onClick = onReadLater
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+    }
+}
+
+@Composable
+private fun ActionRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String?,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(title, style = MaterialTheme.typography.titleSmall)
+            if (subtitle != null) {
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -332,7 +533,7 @@ private fun PlatformBadge() {
 }
 
 @Composable
-private fun EmptyState(isRefreshing: Boolean) {
+private fun EmptyState(isRefreshing: Boolean, title: String) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -341,7 +542,7 @@ private fun EmptyState(isRefreshing: Boolean) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = if (isRefreshing) "正在抓取新闻…" else "还没有新闻",
+            text = if (isRefreshing) "正在抓取新闻…" else title,
             style = MaterialTheme.typography.titleMedium
         )
         Spacer(modifier = Modifier.height(8.dp))

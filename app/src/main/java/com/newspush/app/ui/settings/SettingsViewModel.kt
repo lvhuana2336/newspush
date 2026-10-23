@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.newspush.app.NewsPushApp
 import com.newspush.app.data.model.AppSettings
 import com.newspush.app.data.model.Category
+import com.newspush.app.data.model.NewsArticle
 import com.newspush.app.data.source.RssFeed
 import com.newspush.app.work.WorkerScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     val settings: StateFlow<AppSettings> = container.settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppSettings())
+
+    val trashItems: StateFlow<List<NewsArticle>> = container.repository.observeDeleted()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
@@ -135,5 +139,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun setCustomBackgroundPath(path: String) {
         viewModelScope.launch { container.settingsRepository.setCustomBackgroundPath(path) }
+    }
+
+    fun restore(id: String) {
+        viewModelScope.launch { container.repository.restore(id) }
     }
 }

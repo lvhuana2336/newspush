@@ -36,9 +36,17 @@ class NewsRepository(
 
     fun observeArticle(id: String): Flow<NewsArticle?> = dao.observeById(id)
 
+    fun observeDeleted(): Flow<List<NewsArticle>> = dao.observeDeleted()
+
     suspend fun markRead(id: String) = dao.markRead(id)
 
     suspend fun toggleStarred(id: String) = dao.toggleStarred(id)
+
+    suspend fun markDeleted(id: String) = dao.markDeleted(id, System.currentTimeMillis())
+
+    suspend fun restore(id: String) = dao.restore(id)
+
+    suspend fun setReadLater(id: String, readLater: Boolean) = dao.setReadLater(id, readLater)
 
     suspend fun sync(): SyncReport {
         val settings = settingsRepository.settings.first()
