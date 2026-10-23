@@ -124,4 +124,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             WorkerScheduler.schedule(app)
         }
     }
+
+    fun setThemeMode(mode: String) {
+        viewModelScope.launch { container.settingsRepository.setThemeMode(mode) }
+    }
+
+    fun setCustomIconPath(path: String) {
+        viewModelScope.launch { container.settingsRepository.setCustomIconPath(path) }
+    }
+
+    fun setCustomBackgroundPath(path: String) {
+        viewModelScope.launch { container.settingsRepository.setCustomBackgroundPath(path) }
+    }
 }

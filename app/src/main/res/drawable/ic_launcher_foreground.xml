@@ -4,10 +4,40 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- 简约线稿报纸 -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M30,28h48v52h-48z" />
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M36,26 H70 L78,34 V80 H36 Z M70,26 V34 H78" />
+
     <path
-        android:fillColor="#1E6FBA"
-        android:pathData="M38,40h32v5h-32z M38,52h32v5h-32z M38,64h20v5h-20z" />
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:pathData="M44,42 H58 M44,50 H58 M44,58 H54" />
+
+    <!-- 盐晶格：NaCl 的隐藏元素 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#F2A65A"
+        android:strokeWidth="1.7"
+        android:strokeLineJoin="round"
+        android:pathData="M68,42 L74,50 L68,58 L62,50 Z" />
+    <path
+        android:fillColor="#F2A65A"
+        android:pathData="M66.2,42 a1.8,1.8 0 1 0 3.6,0 a1.8,1.8 0 1 0 -3.6,0 M72.2,50 a1.8,1.8 0 1 0 3.6,0 a1.8,1.8 0 1 0 -3.6,0 M66.2,58 a1.8,1.8 0 1 0 3.6,0 a1.8,1.8 0 1 0 -3.6,0 M60.2,50 a1.8,1.8 0 1 0 3.6,0 a1.8,1.8 0 1 0 -3.6,0" />
+
+    <!-- 隐蔽的 NaCl 字样 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M42,68 V74 M42,68 L45,74 V68 M47.2,71.5 a1.3,1.3 0 1 0 2.6,0 a1.3,1.3 0 1 0 -2.6,0 M49.8,71.5 V74 M55,69.5 a2.2,2.2 0 1 0 0,4.5 M60,68 V74" />
 </vector>

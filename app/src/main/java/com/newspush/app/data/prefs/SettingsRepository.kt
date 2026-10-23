@@ -49,7 +49,10 @@ class SettingsRepository(context: Context) {
             socialApiKey = preferences[Keys.SOCIAL_API_KEY] ?: "",
             socialDeviceId = preferences[Keys.SOCIAL_DEVICE_ID] ?: "",
             socialCursor = preferences[Keys.SOCIAL_CURSOR] ?: 0L,
-            socialLastError = preferences[Keys.SOCIAL_LAST_ERROR] ?: ""
+            socialLastError = preferences[Keys.SOCIAL_LAST_ERROR] ?: "",
+            themeMode = preferences[Keys.THEME_MODE] ?: "system",
+            customIconPath = preferences[Keys.CUSTOM_ICON_PATH] ?: "",
+            customBackgroundPath = preferences[Keys.CUSTOM_BACKGROUND_PATH] ?: ""
         )
     }
 
@@ -158,6 +161,18 @@ class SettingsRepository(context: Context) {
         dataStore.edit { it[Keys.SOCIAL_LAST_ERROR] = message.take(300) }
     }
 
+    suspend fun setThemeMode(mode: String) {
+        dataStore.edit { it[Keys.THEME_MODE] = mode }
+    }
+
+    suspend fun setCustomIconPath(path: String) {
+        dataStore.edit { it[Keys.CUSTOM_ICON_PATH] = path }
+    }
+
+    suspend fun setCustomBackgroundPath(path: String) {
+        dataStore.edit { it[Keys.CUSTOM_BACKGROUND_PATH] = path }
+    }
+
     suspend fun addCustomFeed(feed: RssFeed) {
         dataStore.edit { preferences ->
             val feeds = decodeFeeds(preferences[Keys.CUSTOM_FEEDS]).toMutableList()
@@ -226,6 +241,9 @@ class SettingsRepository(context: Context) {
         val SOCIAL_DEVICE_ID = stringPreferencesKey("social_device_id")
         val SOCIAL_CURSOR = longPreferencesKey("social_cursor")
         val SOCIAL_LAST_ERROR = stringPreferencesKey("social_last_error")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val CUSTOM_ICON_PATH = stringPreferencesKey("custom_icon_path")
+        val CUSTOM_BACKGROUND_PATH = stringPreferencesKey("custom_background_path")
     }
 
     private companion object {

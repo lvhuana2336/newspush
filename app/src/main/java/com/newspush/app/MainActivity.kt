@@ -7,9 +7,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import com.newspush.app.ui.NewsNavHost
+import com.newspush.app.data.model.AppSettings
+import com.newspush.app.ui.AppRoot
 import com.newspush.app.ui.theme.NewsPushTheme
 import com.newspush.app.work.WorkerScheduler
 import kotlinx.coroutines.launch
@@ -21,8 +25,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            NewsPushTheme {
-                NewsNavHost()
+            val container = (application as NewsPushApp).container
+            val settings by container.settingsRepository.settings
+                .collectAsStateWithLifecycle(initialValue = AppSettings())
+            val darkTheme = when (settings.themeMode) {
+                "dark" -> true
+                "light" -> false
+                else -> isSystemInDarkTheme()
+            }
+            NewsPushTheme(darkTheme = darkTheme) {
+                AppRoot(settings = settings)
             }
         }
 

@@ -1,5 +1,7 @@
 package com.newspush.app.ui.home
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,10 +40,15 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -73,6 +80,7 @@ fun HomeScreen(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("新闻推送") },
@@ -136,6 +144,26 @@ private fun CategoryPage(
     onRefresh: () -> Unit,
     onOpenArticle: (String) -> Unit
 ) {
+    var seenIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var newIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var initialized by remember { mutableStateOf(false) }
+
+    LaunchedEffect(articles) {
+        val ids = articles.map { it.id }
+        if (!initialized) {
+            if (ids.isNotEmpty()) {
+                seenIds = ids.toSet()
+                initialized = true
+            }
+        } else {
+            val fresh = ids.filter { it !in seenIds }.take(5).toSet()
+            if (fresh.isNotEmpty()) {
+                seenIds = seenIds + fresh
+                newIds = fresh
+            }
+        }
+    }
+
     PullToRefreshBox(
         isRefreshing = isRefreshing,
         onRefresh = onRefresh,
@@ -157,7 +185,11 @@ private fun CategoryPage(
                 }
             } else {
                 items(articles, key = { it.id }) { article ->
-                    NewsCard(article = article, onClick = { onOpenArticle(article.id) })
+                    NewsCard(
+                        article = article,
+                        animate = article.id in newIds,
+                        onClick = { onOpenArticle(article.id) }
+                    )
                 }
             }
         }
@@ -166,17 +198,33 @@ private fun CategoryPage(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun NewsCard(article: NewsArticle, onClick: () -> Unit) {
+private fun NewsCard(article: NewsArticle, animate: Boolean, onClick: () -> Unit) {
     val background = if (article.isRead) {
         MaterialTheme.colorScheme.surfaceVariant
     } else {
         MaterialTheme.colorScheme.surface
     }
     val displaySummary = article.translatedSummary ?: article.summary
+    val progress = remember(article.id, animate) {
+        Animatable(if (animate) 0f else 1f)
+    }
+    LaunchedEffect(article.id, animate) {
+        if (animate) {
+            progress.animateTo(1f, animationSpec = tween(420))
+        }
+    }
 
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                val p = progress.value
+                translationX = -72.dp.toPx() * (1f - p)
+                scaleY = 0.08f + 0.92f * p
+                alpha = p
+                transformOrigin = TransformOrigin(0.5f, 0f)
+            },
         colors = CardDefaults.cardColors(containerColor = background)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {

@@ -20,5 +20,8 @@ data class AppSettings(
     val socialApiKey: String = "",
     val socialDeviceId: String = "",
     val socialCursor: Long = 0,
-    val socialLastError: String = ""
+    val socialLastError: String = "",
+    val themeMode: String = "system",
+    val customIconPath: String = "",
+    val customBackgroundPath: String = ""
 )

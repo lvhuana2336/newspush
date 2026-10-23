@@ -1,5 +1,12 @@
 package com.newspush.app.ui.settings
 
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -13,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -42,14 +50,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
+import com.newspush.app.MainActivity
 import com.newspush.app.data.model.Category
 import com.newspush.app.data.source.DefaultFeeds
 import com.newspush.app.util.formatClockMinutes
+import com.newspush.app.util.decodeSampledBitmap
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -65,6 +84,23 @@ fun SettingsScreen(onBack: () -> Unit) {
     var blockedWord by remember { mutableStateOf("") }
     var socialUrl by remember(settings.socialApiUrl) { mutableStateOf(settings.socialApiUrl) }
     var socialInvite by remember(settings.socialInviteCode) { mutableStateOf(settings.socialInviteCode) }
+    val context = LocalContext.current
+    val iconBitmap = remember(settings.customIconPath) {
+        decodeSampledBitmap(settings.customIconPath, 512, 512)
+    }
+    val backgroundBitmap = remember(settings.customBackgroundPath) {
+        decodeSampledBitmap(settings.customBackgroundPath, 1600, 1600)
+    }
+    val iconPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            copyImageToFiles(context, uri, "icon")?.let(viewModel::setCustomIconPath)
+        }
+    }
+    val backgroundPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            copyImageToFiles(context, uri, "background")?.let(viewModel::setCustomBackgroundPath)
+        }
+    }
 
     val knownSources = (
         DefaultFeeds.list.map { it.sourceName } +
@@ -73,6 +109,7 @@ fun SettingsScreen(onBack: () -> Unit) {
         ).distinct().sorted()
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("设置") },
@@ -108,6 +145,88 @@ fun SettingsScreen(onBack: () -> Unit) {
                     Text("立即刷新新闻")
                 }
             }
+
+            Text("外观", style = MaterialTheme.typography.titleMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    "system" to "跟随系统",
+                    "light" to "浅色",
+                    "dark" to "深色"
+                ).forEach { (mode, label) ->
+                    FilterChip(
+                        selected = settings.themeMode == mode,
+                        onClick = { viewModel.setThemeMode(mode) },
+                        label = { Text(label) }
+                    )
+                }
+            }
+
+            Text("应用图标", style = MaterialTheme.typography.titleSmall)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (iconBitmap != null) {
+                    Image(
+                        bitmap = iconBitmap.asImageBitmap(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                }
+                Column {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { iconPicker.launch("image/*") }) {
+                            Text("选择图片")
+                        }
+                        if (settings.customIconPath.isNotBlank()) {
+                            TextButton(onClick = { viewModel.setCustomIconPath("") }) {
+                                Text("恢复默认")
+                            }
+                        }
+                    }
+                    if (iconBitmap != null) {
+                        TextButton(onClick = { pinCustomShortcut(context, iconBitmap) }) {
+                            Text("创建桌面图标")
+                        }
+                    }
+                }
+            }
+            Text(
+                "Android 不允许应用在运行时替换桌面启动器图标。自定义图标会用于开屏和界面，可另外创建一个带该图标的桌面快捷方式。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Text("应用背景", style = MaterialTheme.typography.titleSmall)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (backgroundBitmap != null) {
+                    Image(
+                        bitmap = backgroundBitmap.asImageBitmap(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { backgroundPicker.launch("image/*") }) {
+                        Text("选择图片")
+                    }
+                    if (settings.customBackgroundPath.isNotBlank()) {
+                        TextButton(onClick = { viewModel.setCustomBackgroundPath("") }) {
+                            Text("恢复默认")
+                        }
+                    }
+                }
+            }
+            Text(
+                "背景图片会以半透明遮罩覆盖，保证文字可读性。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -430,4 +549,26 @@ private fun intervalLabel(minutes: Int): String = when (minutes) {
     60 -> "1 小时"
     120 -> "2 小时"
     else -> "$minutes 分钟"
+}
+
+private fun copyImageToFiles(context: Context, uri: Uri, prefix: String): String? {
+    return try {
+        val dir = File(context.filesDir, "custom").apply { mkdirs() }
+        val file = File(dir, prefix + "-" + System.currentTimeMillis() + ".img")
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            file.outputStream().use { output -> input.copyTo(output) }
+        } ?: return null
+        file.absolutePath
+    } catch (_: Exception) {
+        null
+    }
+}
+
+private fun pinCustomShortcut(context: Context, bitmap: Bitmap) {
+    val shortcut = ShortcutInfoCompat.Builder(context, "custom-news-icon")
+        .setShortLabel("新闻推送")
+        .setIcon(IconCompat.createWithAdaptiveBitmap(bitmap))
+        .setIntent(Intent(context, MainActivity::class.java).setAction(Intent.ACTION_VIEW))
+        .build()
+    ShortcutManagerCompat.requestPinShortcut(context, shortcut, null)
 }
