@@ -51,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -63,7 +64,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -71,6 +75,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.newspush.app.data.model.Category
 import com.newspush.app.data.model.NewsArticle
+import com.newspush.app.util.Haptics
+import com.newspush.app.util.rememberHaptics
 import com.newspush.app.util.relativeTime
 import kotlinx.coroutines.launch
 
@@ -79,6 +85,10 @@ private data class HomeTab(
     val category: Category? = null,
     val readLater: Boolean = false
 )
+
+private object NoOpHapticFeedback : HapticFeedback {
+    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) = Unit
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,6 +99,8 @@ fun HomeScreen(
     val viewModel: HomeViewModel = viewModel()
     val articles by viewModel.articles.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val hapticsEnabled by viewModel.hapticsEnabled.collectAsStateWithLifecycle()
+    val haptics = rememberHaptics(hapticsEnabled)
     val context = LocalContext.current
     var actionArticle by remember { mutableStateOf<NewsArticle?>(null) }
 
@@ -129,7 +141,12 @@ fun HomeScreen(
                 tabs = tabs,
                 selectedIndex = pagerState.currentPage,
                 listState = chipListState,
-                onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } }
+                onSelect = { index ->
+                    if (index != pagerState.currentPage) {
+                        haptics.tick()
+                    }
+                    scope.launch { pagerState.animateScrollToPage(index) }
+                }
             )
 
             HorizontalPager(
@@ -150,7 +167,8 @@ fun HomeScreen(
                     emptyTitle = if (tab.readLater) "还没有稍后再看的新闻" else "还没有新闻",
                     onRefresh = viewModel::refresh,
                     onOpenArticle = onOpenArticle,
-                    onLongPress = { actionArticle = it }
+                    onLongPress = { actionArticle = it },
+                    haptics = haptics
                 )
             }
         }
@@ -161,11 +179,13 @@ fun HomeScreen(
             article = article,
             onDismiss = { actionArticle = null },
             onDelete = {
+                haptics.reject()
                 viewModel.delete(article.id)
                 actionArticle = null
                 Toast.makeText(context, "已移入回收站", Toast.LENGTH_SHORT).show()
             },
             onFavorite = {
+                haptics.confirm()
                 viewModel.toggleStarred(article.id)
                 actionArticle = null
                 Toast.makeText(
@@ -175,12 +195,14 @@ fun HomeScreen(
                 ).show()
             },
             onShare = {
+                haptics.tick()
                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                 clipboard?.setPrimaryClip(ClipData.newPlainText("原文链接", article.sourceUrl))
                 actionArticle = null
                 Toast.makeText(context, "原文链接已复制", Toast.LENGTH_SHORT).show()
             },
             onReadLater = {
+                haptics.tick()
                 viewModel.setReadLater(article.id, !article.isReadLater)
                 val message = if (article.isReadLater) "已移出稍后再看" else "已加入稍后再看"
                 actionArticle = null
@@ -220,7 +242,8 @@ private fun CategoryPage(
     emptyTitle: String,
     onRefresh: () -> Unit,
     onOpenArticle: (String) -> Unit,
-    onLongPress: (NewsArticle) -> Unit
+    onLongPress: (NewsArticle) -> Unit,
+    haptics: Haptics
 ) {
     var seenIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var newIds by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -267,7 +290,8 @@ private fun CategoryPage(
                         article = article,
                         animate = article.id in newIds,
                         onClick = { onOpenArticle(article.id) },
-                        onLongPress = { onLongPress(article) }
+                        onLongPress = { onLongPress(article) },
+                        haptics = haptics
                     )
                 }
             }
@@ -281,7 +305,8 @@ private fun NewsCard(
     article: NewsArticle,
     animate: Boolean,
     onClick: () -> Unit,
-    onLongPress: () -> Unit
+    onLongPress: () -> Unit,
+    haptics: Haptics
 ) {
     val background = if (article.isRead) {
         MaterialTheme.colorScheme.surfaceVariant
@@ -301,12 +326,14 @@ private fun NewsCard(
         }
     }
 
-    Card(
+    CompositionLocalProvider(LocalHapticFeedback provides NoOpHapticFeedback) {
+        Card(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = {
+                    haptics.longPress()
                     scope.launch {
                         pressScale.animateTo(0.94f, tween(110))
                         pressScale.animateTo(1f, tween(150))
@@ -399,6 +426,7 @@ private fun NewsCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
         }
     }
 }

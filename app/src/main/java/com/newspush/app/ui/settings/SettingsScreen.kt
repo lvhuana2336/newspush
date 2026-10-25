@@ -163,6 +163,21 @@ fun SettingsScreen(onBack: () -> Unit) {
                 }
             }
 
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("触感反馈", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "长按与操作按钮的轻触反馈",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = settings.hapticsEnabled,
+                    onCheckedChange = viewModel::setHapticsEnabled
+                )
+            }
+
             Text("应用图标", style = MaterialTheme.typography.titleSmall)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (iconBitmap != null) {

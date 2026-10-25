@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -24,6 +25,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    val hapticsEnabled: StateFlow<Boolean> = container.settingsRepository.settings
+        .map { it.hapticsEnabled }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
     fun refresh() {
         if (_isRefreshing.value) return

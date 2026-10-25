@@ -52,7 +52,8 @@ class SettingsRepository(context: Context) {
             socialLastError = preferences[Keys.SOCIAL_LAST_ERROR] ?: "",
             themeMode = preferences[Keys.THEME_MODE] ?: "system",
             customIconPath = preferences[Keys.CUSTOM_ICON_PATH] ?: "",
-            customBackgroundPath = preferences[Keys.CUSTOM_BACKGROUND_PATH] ?: ""
+            customBackgroundPath = preferences[Keys.CUSTOM_BACKGROUND_PATH] ?: "",
+            hapticsEnabled = preferences[Keys.HAPTICS_ENABLED] ?: true
         )
     }
 
@@ -173,6 +174,10 @@ class SettingsRepository(context: Context) {
         dataStore.edit { it[Keys.CUSTOM_BACKGROUND_PATH] = path }
     }
 
+    suspend fun setHapticsEnabled(enabled: Boolean) {
+        dataStore.edit { it[Keys.HAPTICS_ENABLED] = enabled }
+    }
+
     suspend fun addCustomFeed(feed: RssFeed) {
         dataStore.edit { preferences ->
             val feeds = decodeFeeds(preferences[Keys.CUSTOM_FEEDS]).toMutableList()
@@ -244,6 +249,7 @@ class SettingsRepository(context: Context) {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val CUSTOM_ICON_PATH = stringPreferencesKey("custom_icon_path")
         val CUSTOM_BACKGROUND_PATH = stringPreferencesKey("custom_background_path")
+        val HAPTICS_ENABLED = booleanPreferencesKey("haptics_enabled")
     }
 
     private companion object {

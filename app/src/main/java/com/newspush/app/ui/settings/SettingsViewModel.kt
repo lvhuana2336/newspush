@@ -141,6 +141,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { container.settingsRepository.setCustomBackgroundPath(path) }
     }
 
+    fun setHapticsEnabled(enabled: Boolean) {
+        viewModelScope.launch { container.settingsRepository.setHapticsEnabled(enabled) }
+    }
+
     fun restore(id: String) {
         viewModelScope.launch { container.repository.restore(id) }
     }

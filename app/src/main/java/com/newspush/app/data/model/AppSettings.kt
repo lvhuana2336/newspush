@@ -23,5 +23,6 @@ data class AppSettings(
     val socialLastError: String = "",
     val themeMode: String = "system",
     val customIconPath: String = "",
-    val customBackgroundPath: String = ""
+    val customBackgroundPath: String = "",
+    val hapticsEnabled: Boolean = true
 )
